@@ -1,5 +1,5 @@
 from pathlib import Path
-from ezlife.ml.utils import model_downloader
+from ezlife.ml.benchmarker.utils import model_downloader
 from ezlife.ml.benchmarker.utils.mem_utils import get_device
 from abc import abstractmethod
 

@@ -49,6 +49,8 @@ class Benchmarker:
 
         df = pd.DataFrame(df)
 
+        return df, library_versions
+
     def get_library_versions(self):
         # try and import the libraries using importlib
         version_map = {}

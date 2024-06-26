@@ -2,7 +2,7 @@ import time
 
 from ezlife.ml.benchmarker.utils.mem_utils import gc_cuda
 from ezlife.ml.benchmarker.loaders.loader import Loader
-from ezlife.ml.transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM
 
 class HFLoader(Loader):
     def __init__(self, model_id):
