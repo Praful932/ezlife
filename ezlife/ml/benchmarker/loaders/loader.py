@@ -11,18 +11,24 @@ MODEL_CACHE_DIR.mkdir(exist_ok=True)
 class Loader:
     def __init__(self, model_id, runs, warmup):
         self.model_id = model_id
-        self.model_dir = model_dir
         self.warmup = warmup
+        self.runs = runs
         self.device = get_device()
+        self.model = None
+        self.tokenizer = None
+        self.model_dir = None
+
 
     def load(self):
+        print(f"downloading model....")
         self.model_dir = model_downloader.download_model_from_hf(
             model_id = self.model_id,
-            model_dir = MODEL_CACHE_DIR
+            save_dir = MODEL_CACHE_DIR
         )
+        print(f"downloaded model")
 
     @abstractmethod
-    def warmup(self):
+    def warmup_model(self):
         pass
 
     def run_inference(self, data):

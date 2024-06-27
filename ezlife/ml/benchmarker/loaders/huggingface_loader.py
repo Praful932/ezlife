@@ -1,40 +1,51 @@
 import time
+import torch
+
+import numpy as np
 
 from ezlife.ml.benchmarker.utils.mem_utils import gc_cuda
 from ezlife.ml.benchmarker.loaders.loader import Loader
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-class HFLoader(Loader):
-    def __init__(self, model_id):
-        super().__init__(model_id)
-        self.model = None
-        self.tokenizer = None
+class HuggingFaceLoader(Loader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def load(self):
-        super().load(model_dir)
-        params = {
+        super().load()
+        print(f"loading model....")
+        model_loading_params = {
             'low_cpu_mem_usage' : True,
-            'torch_dtype' : torch.blfloat16,
+            'torch_dtype' : torch.bfloat16,
         }
-        model = AutoModelForCausalLM.from_pretrained(model_dir, **params)
-        tokenizer = AutoTokenizer.from_pretrained(model_dir)
+        common_params = {
+            'local_files_only' : True
+        }
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_dir, **model_loading_params, **common_params)
+        self.model.generation_config.pad_token_id = self.model.generation_config.eos_token_id
 
-    def warmup(self):
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir, **common_params)
+        self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+        self.model.to(self.device)
+        print(f"model loaded, device - {self.model.device}")
+
+    def warmup_model(self):
+        print(f"warming up model....")
         example = "What is the meaning of life?"
         gc_cuda()
 
-        inputs = self.tokenizer(example, return_tensors="pt", padding=True)
+        inputs = self.tokenizer(example, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         for _ in range(self.warmup):
             self.model.generate(**inputs)
+        print(f"model warmed up")
 
 
 
-    def run_inference(self, data):
-        example = "What is the meaning of life?"
+    def run_inference(self, example):
         gc_cuda()
-        inputs = self.tokenizer(example, return_tensors="pt", padding=True)
+        inputs = self.tokenizer(example, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         num_tokens = []
@@ -43,9 +54,11 @@ class HFLoader(Loader):
         for _ in range(self.runs):
             start = time.perf_counter()
             tokenized_output = self.model.generate(**inputs)
+            decoded_text = self.tokenizer.decode(tokenized_output[0], skip_special_tokens=True)
+            print(f"decoded_text: {decoded_text}")
             end = time.perf_counter()
 
-            latencies.append((end - start)) * 1000
+            latencies.append((end - start)  * 1000)
             tokens = len(tokenized_output[0])
             num_tokens.append(tokens)
 
@@ -55,6 +68,6 @@ class HFLoader(Loader):
             'latency_p50' : np.percentile(latencies, 50, interpolation='higher'),
             'latency_p90' : np.percentile(latencies, 90, interpolation='higher'),
             'latency_p99' : np.percentile(latencies, 99, interpolation='higher'),
-            'input_tokens' : len(inputs['input_ids'][0], interpolation='higher'),
+            'input_tokens' : len(inputs['input_ids'][0]),
             'output_tokens' : np.mean(num_tokens),
         }

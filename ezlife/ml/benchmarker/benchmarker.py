@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ezlife.ml.benchmarker.utils.mem_utils import gc_cuda
 from ezlife.ml.benchmarker.loaders.huggingface_loader import HuggingFaceLoader
 
@@ -38,9 +40,14 @@ class Benchmarker:
         }
 
         for backend in self.backends:
-            loader = self.__BACKEND_LOADERS[backend](self.model_id)
+            loader = self.__BACKEND_LOADERS[backend](self.model_id, self.runs, self.warmup)
             loader.load()
-            stats = loader.run_inference('Hello World')
+
+            loader.warmup_model()
+            gc_cuda()
+
+            stats = loader.run_inference('What is the meaning of life?')
+
             df['backend'].append(backend)
             for key, value in stats.items():
                 df[key].append(value)
@@ -49,7 +56,7 @@ class Benchmarker:
 
         df = pd.DataFrame(df)
 
-        return df, library_versions
+        return df
 
     def get_library_versions(self):
         # try and import the libraries using importlib
