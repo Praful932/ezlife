@@ -14,14 +14,10 @@ class HuggingFaceLoader(Loader):
     def load(self):
         super().load()
         print(f"loading model....")
-        model_loading_params = {
-            'low_cpu_mem_usage' : True,
-            'torch_dtype' : torch.bfloat16,
-        }
         common_params = {
             'local_files_only' : True
         }
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_dir, **model_loading_params, **common_params)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_dir, **model_loader_args, **common_params)
         self.model.generation_config.pad_token_id = self.model.generation_config.eos_token_id
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir, **common_params)
@@ -38,10 +34,8 @@ class HuggingFaceLoader(Loader):
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         for _ in range(self.warmup):
-            self.model.generate(**inputs)
+            self.model.generate(**inputs, **self.generate_args)
         print(f"model warmed up")
-
-
 
     def run_inference(self, example):
         gc_cuda()
@@ -53,7 +47,7 @@ class HuggingFaceLoader(Loader):
 
         for _ in range(self.runs):
             start = time.perf_counter()
-            tokenized_output = self.model.generate(**inputs)
+            tokenized_output = self.model.generate(**inputs, **self.generate_args)
             decoded_text = self.tokenizer.decode(tokenized_output[0], skip_special_tokens=True)
             print(f"decoded_text: {decoded_text}")
             end = time.perf_counter()
@@ -70,4 +64,6 @@ class HuggingFaceLoader(Loader):
             'latency_p99' : np.percentile(latencies, 99, interpolation='higher'),
             'input_tokens' : len(inputs['input_ids'][0]),
             'output_tokens' : np.mean(num_tokens),
+            'total_tokens' : np.mean(num_tokens) + len(inputs['input_ids'][0]),
+            'tps_avg' : np.mean(output_tokens) / (latency_avg / 1000),
         }

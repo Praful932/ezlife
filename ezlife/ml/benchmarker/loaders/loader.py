@@ -9,8 +9,10 @@ MODEL_CACHE_DIR.mkdir(exist_ok=True)
 
 
 class Loader:
-    def __init__(self, model_id, runs, warmup):
+    def __init__(self, model_id, model_loader_args, runs, warmup):
         self.model_id = model_id
+        self.model_loader_args = model_loader_args
+        self.generate_args = generate_args
         self.warmup = warmup
         self.runs = runs
         self.device = get_device()
