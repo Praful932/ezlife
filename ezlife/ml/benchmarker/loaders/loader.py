@@ -21,11 +21,12 @@ class Loader:
         self.model_dir = None
 
 
-    def load(self):
+    def load(self, **kwargs):
         print(f"downloading model....")
         self.model_dir = model_downloader.download_model_from_hf(
             model_id = self.model_id,
-            save_dir = MODEL_CACHE_DIR
+            save_dir = MODEL_CACHE_DIR,
+            **kwargs
         )
         print(f"downloaded model")
         gc_cuda()

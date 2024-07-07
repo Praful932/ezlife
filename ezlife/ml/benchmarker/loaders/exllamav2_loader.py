@@ -16,8 +16,8 @@ class ExllamaV2Loader(Loader):
     def relevant_pkgs(self):
         return ['transformers', 'torch', 'exllamav2', 'flash-attn' 'auto-gptq']
 
-    def load(self):
-        super().load()
+    def load(self, **kwargs):
+        super().load(**kwargs)
         self.model_dir = str(self.model_dir)
         self.config = ExLlamaV2Config(self.model_dir)
         self.model = ExLlamaV2(self.config, **self.model_loader_args)
@@ -66,7 +66,7 @@ class ExllamaV2Loader(Loader):
             latency = (end - start) * 1000
             latencies.append(latency)
             tps = num_output_tokens / (latency / 1000)
-            print(f"tps - {tps}, latency -  {latency}, input - {input}, output - {repr(output_excluding_prompt)}")
+            print(f"tps - {tps}, latency -  {latency}, input - {example}, output - {repr(output_excluding_prompt)}")
 
         latency_avg = sum(latencies) / self.runs
 

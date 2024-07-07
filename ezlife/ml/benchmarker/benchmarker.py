@@ -22,10 +22,11 @@ class Benchmarker:
         'flash-attn'
     ]
 
-    def __init__(self, model_id, loader, model_loader_args, generate_args, runs = 20, warmup = 20):
+    def __init__(self, model_id, loader, model_loader_args, generate_args, model_downloader_args = None, runs = 20, warmup = 20):
         self.model_id = model_id
         self.loader = loader
         self.model_loader_args = model_loader_args
+        self.model_downloader_args = {} if model_downloader_args is None else model_downloader_args
         self.generate_args = generate_args
         self.runs = 20
         self.warmup = 20
@@ -78,7 +79,7 @@ class Benchmarker:
             runs = self.runs,
             warmup = self.warmup,
         )
-        loader_ob.load()
+        loader_ob.load(**self.model_downloader_args)
 
         loader_ob.warmup_model()
         gc_cuda()

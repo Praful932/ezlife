@@ -7,9 +7,10 @@ import numpy as np
 from ezlife.ml.benchmarker.utils.mem_utils import gc_cuda
 from ezlife.ml.benchmarker.utils.model_utils import decoder_parser
 from ezlife.ml.benchmarker.loaders.loader import Loader
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from awq import AutoAWQForCausalLM
+from transformers import AutoTokenizer
 
-class HuggingFaceLoader(Loader):
+class AutoAWQLoader(Loader):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -17,13 +18,13 @@ class HuggingFaceLoader(Loader):
     def relevant_pkgs(self):
         return ['transformers', 'torch']
 
-    def load(self, **kwargs):
-        super().load( **kwargs)
+    def load(self):
+        super().load()
         print(f"loading model....")
         common_params = {
             'local_files_only' : True
         }
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_dir, **self.model_loader_args, **common_params)
+        self.model = AutoAWQForCausalLM.from_pretrained(self.model_dir, **self.model_loader_args, **common_params)
         self.model.generation_config.pad_token_id = self.model.generation_config.eos_token_id
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir, **common_params)
