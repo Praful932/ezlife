@@ -9,7 +9,7 @@ MODEL_CACHE_DIR.mkdir(exist_ok=True)
 
 
 class Loader:
-    def __init__(self, model_id, model_loader_args, runs, warmup):
+    def __init__(self, model_id, model_loader_args, generate_args, runs, warmup):
         self.model_id = model_id
         self.model_loader_args = model_loader_args
         self.generate_args = generate_args
@@ -34,4 +34,9 @@ class Loader:
         pass
 
     def run_inference(self, data):
+        pass
+
+    @property
+    @abstractmethod
+    def relevant_pkgs(self):
         pass

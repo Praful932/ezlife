@@ -19,4 +19,4 @@ def dict_to_uuid(d):
     hash_obj = hashlib.sha1(dict_string.encode())
 
     # Generate a UUID based on the hash.
-    return uuid.UUID(hash_obj.hexdigest()[:32])
+    return str(uuid.UUID(hash_obj.hexdigest()[:32]))

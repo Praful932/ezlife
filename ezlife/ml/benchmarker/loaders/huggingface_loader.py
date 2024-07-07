@@ -11,13 +11,17 @@ class HuggingFaceLoader(Loader):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @property
+    def relevant_pkgs(self):
+        return ['transformers', 'torch']
+
     def load(self):
         super().load()
         print(f"loading model....")
         common_params = {
             'local_files_only' : True
         }
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_dir, **model_loader_args, **common_params)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_dir, **self.model_loader_args, **common_params)
         self.model.generation_config.pad_token_id = self.model.generation_config.eos_token_id
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir, **common_params)
@@ -42,8 +46,9 @@ class HuggingFaceLoader(Loader):
         inputs = self.tokenizer(example, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        num_tokens = []
+        num_output_tokens = []
         latencies = []
+        num_input_tokens = len(inputs['input_ids'][0])
 
         for _ in range(self.runs):
             start = time.perf_counter()
@@ -54,16 +59,21 @@ class HuggingFaceLoader(Loader):
 
             latencies.append((end - start)  * 1000)
             tokens = len(tokenized_output[0])
-            num_tokens.append(tokens)
+            num_output_tokens.append(tokens)
 
-        return {
-            'latency_avg' : sum(latencies) / self.runs,
+        latency_avg = sum(latencies) / self.runs
+
+        ret_val = {
+            'latency_avg' : latency_avg,
             'latency_std' : np.std(latencies),
             'latency_p50' : np.percentile(latencies, 50, interpolation='higher'),
             'latency_p90' : np.percentile(latencies, 90, interpolation='higher'),
             'latency_p99' : np.percentile(latencies, 99, interpolation='higher'),
-            'input_tokens' : len(inputs['input_ids'][0]),
-            'output_tokens' : np.mean(num_tokens),
-            'total_tokens' : np.mean(num_tokens) + len(inputs['input_ids'][0]),
-            'tps_avg' : np.mean(output_tokens) / (latency_avg / 1000),
+            'input_tokens' : num_input_tokens,
+            'output_tokens' : np.mean(num_output_tokens),
+            'total_tokens' : np.mean(num_output_tokens) + num_input_tokens,
+            'tps_avg' : np.mean(num_output_tokens) / (latency_avg / 1000),
         }
+
+
+        return ret_val

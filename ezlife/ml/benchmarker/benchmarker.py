@@ -51,32 +51,45 @@ class Benchmarker:
             # total_gpus, gpu_name
             'gpu_config' : [],
             # will be none if gpu_config is None
-            'gpu_config_hash' : [],
 
-            'torch_version' : [],
-            'transformers_version' : [],
-            'exllamav2_version' : [],
-            'awq_version' : [],
+            'pkg_version' : [],
+
+            'model_loader_args_hash' : [],
+            'gpu_config_hash' : [],
             # hash will be only computed for frameworks that are relevant for a particular config
             'version_hash' : [],
         }
 
-        loader = self.__LOADERS[backend](self.model_id, self.model_loader_args, self.runs, self.warmup)
-        loader.load()
+        loader_ob = self.__LOADERS[self.loader](
+            model_id = self.model_id,
+            model_loader_args = self.model_loader_args,
+            generate_args = self.generate_args,
+            runs = self.runs,
+            warmup = self.warmup,
+        )
+        loader_ob.load()
 
-        loader.warmup_model()
+        loader_ob.warmup_model()
         gc_cuda()
 
-        stats = loader.run_inference('What is the meaning of life?')
+        stats = loader_ob.run_inference('What is the meaning of life?')
 
-        df['loader'].append(backend)
+        df['loader'].append(self.loader)
         df['model_id'].append(self.model_id)
         df['model_loader_args'].append(self.model_loader_args)
         df['generate_args'].append(self.generate_args)
-        df['gpu_config'] = {
+        df['gpu_config'].append({
             'gpu_count' : get_gpu_count(),
             'gpu_name' : get_gpu_name(),
-        }
+        })
+        df['gpu_config_hash'] = dict_to_uuid(df['gpu_config'])
+
+        relevant_pkg_versions = {k : v for k, v in self.library_versions.items() if k in loader_ob.relevant_pkgs}
+
+
+
+        df['pkg_version'] = [relevant_pkg_versions]
+        df['version_hash'] = dict_to_uuid(relevant_pkg_versions)
 
         for key, value in stats.items():
             df[key].append(value)
