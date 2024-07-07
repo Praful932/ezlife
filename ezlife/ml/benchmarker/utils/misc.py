@@ -13,7 +13,7 @@ def dict_to_uuid(d):
     - uuid.UUID: A UUID derived from the hash of the dictionary.
     """
     # Convert the dictionary to a JSON string. Ensure consistency in the order.
-    dict_string = json.dumps(d, sort_keys=True)
+    dict_string = json.dumps(d, sort_keys=True, default = str)
 
     # Create a hash of the JSON string.
     hash_obj = hashlib.sha1(dict_string.encode())

@@ -1,6 +1,6 @@
 from pathlib import Path
 from ezlife.ml.benchmarker.utils import model_downloader
-from ezlife.ml.benchmarker.utils.mem_utils import get_device
+from ezlife.ml.benchmarker.utils.mem_utils import get_device, gc_cuda
 from abc import abstractmethod
 
 current_dir = Path(__file__).resolve().parent
@@ -28,6 +28,7 @@ class Loader:
             save_dir = MODEL_CACHE_DIR
         )
         print(f"downloaded model")
+        gc_cuda()
 
     @abstractmethod
     def warmup_model(self):

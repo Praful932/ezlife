@@ -4,12 +4,13 @@ from ezlife.ml.benchmarker.utils.mem_utils import gc_cuda
 from ezlife.ml.benchmarker.utils.misc import dict_to_uuid
 from ezlife.ml.benchmarker.utils.gpu_utils import get_gpu_count, get_gpu_name
 from ezlife.ml.benchmarker.loaders.huggingface_loader import HuggingFaceLoader
+from ezlife.ml.benchmarker.loaders.exllamav2_loader import ExllamaV2Loader
 
 class Benchmarker:
 
     __LOADERS = {
         'hf' : HuggingFaceLoader,
-        # 'exllamav2' : ExLLamaV2Loader,
+        'exllamav2' : ExllamaV2Loader,
         # 'vllm' : VLLMLoader,
     }
 
@@ -18,6 +19,7 @@ class Benchmarker:
         'transformers',
         'exllamav2',
         'awq',
+        'flash-attn'
     ]
 
     def __init__(self, model_id, loader, model_loader_args, generate_args, runs = 20, warmup = 20):
@@ -30,6 +32,15 @@ class Benchmarker:
         self.library_versions = self.get_library_versions()
 
     def bm_latency_single_sample(self):
+
+        examples = [
+            "What is the meaning of life?",
+            "Explain how to make a french toast in the funniest way possible",
+            "What is the best way to make a million dollars in a day?",
+            "Write a poem about the moon and the stars",
+        ]
+
+
         gc_cuda()
 
         df = {
@@ -43,9 +54,9 @@ class Benchmarker:
             'latency_p50' : [],
             'latency_p90' : [],
             'latency_p99' : [],
-            'input_tokens' : [],
-            'output_tokens' : [],
-            'total_tokens' : [],
+            'avg_input_tokens' : [],
+            'avg_output_tokens' : [],
+            'avg_total_tokens' : [],
             'tps_avg' : [],
 
             # total_gpus, gpu_name
@@ -72,7 +83,9 @@ class Benchmarker:
         loader_ob.warmup_model()
         gc_cuda()
 
-        stats = loader_ob.run_inference('What is the meaning of life?')
+        stats = loader_ob.run_inference(
+            examples = examples
+        )
 
         df['loader'].append(self.loader)
         df['model_id'].append(self.model_id)
@@ -90,6 +103,7 @@ class Benchmarker:
 
         df['pkg_version'] = [relevant_pkg_versions]
         df['version_hash'] = dict_to_uuid(relevant_pkg_versions)
+        df['model_loader_args_hash'] = dict_to_uuid(self.model_loader_args)
 
         for key, value in stats.items():
             df[key].append(value)
