@@ -32,14 +32,14 @@ class Benchmarker:
         self.warmup = 20
         self.library_versions = self.get_library_versions()
 
-    def bm_latency_single_sample(self):
-
-        examples = [
-            "What is the meaning of life?",
-            "Explain how to make a french toast in the funniest way possible",
-            "What is the best way to make a million dollars in a day?",
-            "Write a poem about the moon and the stars",
-        ]
+    def bm_latency_single_sample(self, examples = None):
+        if examples is None:
+            examples = [
+                "What is the meaning of life?",
+                "Explain how to make a french toast in the funniest way possible",
+                "What is the best way to make a million dollars in a day?",
+                "Write a poem about the moon and the stars",
+            ]
 
 
         gc_cuda()
